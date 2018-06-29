@@ -26,7 +26,7 @@
   class Map {
     constructor(){
       const self = this
-      window.nmap = this
+
       this.autocomplete = new google.maps.places.Autocomplete(document.getElementById('address'))
 
       this.map = new google.maps.Map(document.getElementById('storeMap'),
@@ -65,7 +65,7 @@
       }})
 
       this.map.data.addListener("click",event=>{
-        self.drawPopup(event.feature.getProperty("name"),event.feature.getGeometry().get())
+        self.drawPopup(event.feature)
       })
 
       google.maps.event.addListener(this.map,"idle",()=>{
@@ -81,29 +81,45 @@
       return google.maps.geometry.spherical.computeDistanceBetween(p.getGeometry().get(), this.map.getCenter())
     }
 
+    mapURL(feature){
+      let geo = feature.getGeometry().get()
+      let name = feature.getProperty("name")
+      return `https://www.google.com/maps/search/?api=1&query=${name}`
+      // return `https://www.google.com/maps/search/?api=1&query=${name} ${geo.lat()},${geo.lng()}`
+    }
+
     clearMap(){
       this.map.data.forEach(feature=>{
         this.map.data.remove(feature)
       })
     }
 
-    mapPopup(name,cat){
-      return `<h4>${name}</h4>
-              <p>${cat}</p>`
+    mapPopup(feature){
+      return `<h4>${feature.getProperty("name")}</h4>
+              <p>Products: ${this.productString(feature)}</p>
+              <a href="${this.mapURL(feature)}" target="_">Open in Google Maps</a>
+              `
+    }
+
+    productString(feature){
+      let products = [feature.getProperty("Pints") && "Pints",feature.getProperty("Scoops") && "Scoops",feature.getProperty("Cups") && "Cups"]
+      products = products.filter(x=>x)
+      return products.join(", ")
     }
 
     tableRow(feature){
-      let products = [feature.getProperty("Pints") && "Pints",feature.getProperty("Scoops") && "Scoops",feature.getProperty("Cups") && "Cups"]
-      products = products.filter(x=>x)
       return `<tr>
                 <td>${feature.getProperty("name")}</td>
-                <td>${products.join(", ")}</td>
+                <td>${this.productString(feature)}</td>
               </tr>
               `
     }
 
-    drawPopup(name,pos) {
-      this.infoWindow.setContent(this.mapPopup(name))
+    drawPopup(feature) {
+      let pos = feature.getGeometry().get()
+      // let popup = $(this.mapPopup(feature))
+      // console.log(popup)
+      this.infoWindow.setContent(this.mapPopup(feature))
       this.infoWindow.setPosition(pos)
       this.infoWindow.setOptions({pixelOffset: new google.maps.Size(0, -30)});
       this.infoWindow.open(this.map)
@@ -133,7 +149,7 @@
 
       tableItems.forEach(feature=>{
         $(self.tableRow(feature)).appendTo("#storeTable").on("click",()=>{
-          self.drawPopup(feature.getProperty("name"),feature.getGeometry().get())
+          self.drawPopup(feature)
         })
       })
     }
