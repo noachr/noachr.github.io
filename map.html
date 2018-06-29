@@ -1,0 +1,222 @@
+<html>
+<head>
+  <title>Revolution Gelato Locations</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="xmlToJSON.min.js"></script>
+
+  <style>
+    #storeMap {
+      height: 400px;
+      width: 100%;
+    }
+    #main {
+      padding-top: 10px;
+    }
+    #tableContainer {
+      padding-top: 12px;
+      width: 100%;
+      height: 600px;
+    }
+
+  </style>
+
+  <script>
+
+  class Map {
+    constructor(){
+      const self = this
+      window.nmap = this
+      this.autocomplete = new google.maps.places.Autocomplete(document.getElementById('address'))
+
+      this.map = new google.maps.Map(document.getElementById('storeMap'),
+      {
+        zoom: 11,
+        center: {lat: 33.7586, lng: -84.4223}
+      })
+
+      let icon = {
+          url: "X.png",
+          scaledSize: new google.maps.Size(20, 20),
+          origin: new google.maps.Point(0,0),
+          anchor: new google.maps.Point(10, 40)
+      }
+      this.map.data.setStyle({
+        icon: icon
+      })
+
+      this.infoWindow = new google.maps.InfoWindow()
+
+      this.autocomplete.bindTo("bounds", this.map)
+
+
+      this.autocomplete.addListener('place_changed', function() {
+        self.infoWindow.close()
+        let place = self.autocomplete.getPlace()
+        if(!place.geometry){
+          console.log("No place geometry")
+          return
+        }
+        if (place.geometry.viewport) {
+          self.map.fitBounds(place.geometry.viewport)
+        } else {
+          self.map.setCenter(place.geometry.location)
+          self.map.setZoom(17)
+      }})
+
+      this.map.data.addListener("click",event=>{
+        self.drawPopup(event.feature.getProperty("name"),event.feature.getGeometry().get())
+      })
+
+      google.maps.event.addListener(this.map,"idle",()=>{
+        self.filterMap()
+      })
+
+      $("input[type=checkbox]").on("click",()=>self.filterMap())
+
+      this.importKML()
+    }
+
+    dist(p){
+      return google.maps.geometry.spherical.computeDistanceBetween(p.getGeometry().get(), this.map.getCenter())
+    }
+
+    clearMap(){
+      this.map.data.forEach(feature=>{
+        this.map.data.remove(feature)
+      })
+    }
+
+    mapPopup(name,cat){
+      return `<h4>${name}</h4>
+              <p>${cat}</p>`
+    }
+
+    tableRow(feature){
+      let products = [feature.getProperty("Pints") && "Pints",feature.getProperty("Scoops") && "Scoops",feature.getProperty("Cups") && "Cups"]
+      products = products.filter(x=>x)
+      return `<tr>
+                <td>${feature.getProperty("name")}</td>
+                <td>${products.join(", ")}</td>
+              </tr>
+              `
+    }
+
+    drawPopup(name,pos) {
+      this.infoWindow.setContent(this.mapPopup(name))
+      this.infoWindow.setPosition(pos)
+      this.infoWindow.setOptions({pixelOffset: new google.maps.Size(0, -30)});
+      this.infoWindow.open(this.map)
+    }
+
+    filterMap(){
+      const self = this
+      let scoops = $("#filterScoops")[0].checked
+      let pints = $("#filterPints")[0].checked
+      let cups = $("#filterCups")[0].checked
+
+      let tableItems = []
+      this.map.data.forEach(feature=>{
+        let fInclude = (scoops && feature.getProperty("Scoops")) || (pints && feature.getProperty("Pints")) || (cups && feature.getProperty("Cups"))
+        if(!fInclude) self.map.data.overrideStyle(feature,{visible: false})
+        else{
+          self.map.data.overrideStyle(feature,{visible: true})
+          if(self.map.getBounds().contains(feature.getGeometry().get())){
+            tableItems.push(feature)
+          }
+        }
+      })
+
+      $("#storeTable").empty()
+
+      tableItems.sort((a,b)=>self.dist(a) >= self.dist(b))
+
+      tableItems.forEach(feature=>{
+        $(self.tableRow(feature)).appendTo("#storeTable").on("click",()=>{
+          self.drawPopup(feature.getProperty("name"),feature.getGeometry().get())
+        })
+      })
+    }
+
+    importKML(){
+      const self = this
+      const out = {"type": "FeatureCollection","features": []}
+      const req = new Request("https://www.google.com/maps/d/kml?forcekml=1&mid=14r5SWV7hduSckj4MEqa6tv-vPjY&lid=zqn6rCPc5CCk.kgYycKAR1CcQ")
+      let id = 0
+      fetch(req).then(res=>{
+        res.text().then(xml=>{
+          let data = xmlToJSON.parseString(xml)
+          data["kml"][0]["Document"][0]["Placemark"].forEach(place=>{
+            let name = place["name"][0]["_text"]
+            let pos = place["Point"][0]["coordinates"][0]["_text"].split(",")
+            out.features.push({
+              "geometry": {
+                "type": "Point",
+                "coordinates": [parseFloat(pos[0]),parseFloat(pos[1])]
+              },
+              "type": "Feature",
+              "id": id++,
+              "properties": {
+                "name": name,
+                "Scoops": Math.random() <= 0.6,
+                "Pints": Math.random() <= 0.6,
+                "Cups": Math.random() <= 0.6
+              }
+            })
+          })
+          self.map.data.addGeoJson(out)
+          self.filterMap()
+        })
+      })
+    }
+
+  }
+
+  function initMap(){
+    new Map()
+  }
+
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="column">
+        <div class="row justify-content-center">
+          <h2>Revolution Gelato Locations</h2>
+        </div>
+        <div id="main" class="row">
+          <form>
+            <label for="address">Address:</label>
+            <input id="address" size="30"/>
+            <label for="filterPints">Pints</label>
+            <input id="filterPints" type="checkbox" checked/>
+            <label for="filterScoops">Scoops</label>
+            <input id="filterScoops" type="checkbox" checked/>
+            <label for="filterCups">Cups</label>
+            <input id="filterCups" type="checkbox" checked/>
+          </form>
+        </div>
+      </div>
+      <div id="storeMap"></div>
+      <div id="tableContainer" class="pre-scrollable">
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th scope="col">Store Name</th>
+              <th scope="col">Products</th>
+              <!-- <th scope="col">Address</th> -->
+            </tr>
+            <tbody id="storeTable">
+
+            </tbody>
+          </thead>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB8QeDniZSjBgKb_tPSRI_CHL7QQrkdcys&libraries=places,geometry&callback=initMap"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+-- custom markers
+-- above or on map
+-- https://mapstyle.withgoogle.com/
+-- http://geojson.io
+-- geoloc
+-- flavors/product (inventory integration)
+
+
+TODO
+--Sort by distance/distance
