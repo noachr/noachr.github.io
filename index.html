@@ -6,12 +6,18 @@
   <script type="text/javascript" src="xmlToJSON.min.js"></script>
 
   <style>
+    #mainRow{
+      position: relative
+    }
     #loading {
       position: absolute;
       height: 100%;
       width: 100%;
       background-color: rgba(0,0,0,0.45);
       z-index: 10;
+    }
+    #loadingText {
+      margin-top: 250px;
     }
     #storeMap {
       height: 400px;
@@ -205,8 +211,10 @@
 
 <body>
   <div class="container">
-    <div class="row justify-content-center">
-      <div id="loading"></div>
+    <div id="mainRow" class="row justify-content-center">
+      <div id="loading">
+        <div id="loadingText" class="row justify-content-center"><h2>Loading...</h2></div>
+      </div>
       <div class="column">
         <div class="row justify-content-center">
           <h2>Revolution Gelato Locations</h2>
