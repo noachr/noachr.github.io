@@ -6,6 +6,13 @@
   <script type="text/javascript" src="xmlToJSON.min.js"></script>
 
   <style>
+    #loading {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      background-color: rgba(0,0,0,0.45);
+      z-index: 10;
+    }
     #storeMap {
       height: 400px;
       width: 100%;
@@ -182,6 +189,7 @@
           })
           self.map.data.addGeoJson(out)
           self.filterMap()
+          $("#loading").css("display","none")
         })
       })
     }
@@ -198,6 +206,7 @@
 <body>
   <div class="container">
     <div class="row justify-content-center">
+      <div id="loading"></div>
       <div class="column">
         <div class="row justify-content-center">
           <h2>Revolution Gelato Locations</h2>
