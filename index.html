@@ -45,7 +45,9 @@
       this.map = new google.maps.Map(document.getElementById('storeMap'),
       {
         zoom: 5,
-        center: {lat: 35.6377018116222, lng: -84.4905453999}
+        center: {lat: 35.6377018116222, lng: -84.4905453999},
+        mapTypeControl: false,
+        streetViewControl: false
       })
 
       if (navigator.geolocation) {
@@ -55,7 +57,7 @@
             lng: position.coords.longitude
           };
           self.map.setCenter(pos);
-          self.map.setZoom(11)
+          self.map.setZoom(10)
         })
       }
 
@@ -141,8 +143,6 @@
 
     drawPopup(feature) {
       let pos = feature.getGeometry().get()
-      // let popup = $(this.mapPopup(feature))
-      // console.log(popup)
       this.infoWindow.setContent(this.mapPopup(feature))
       this.infoWindow.setPosition(pos)
       this.infoWindow.setOptions({pixelOffset: new google.maps.Size(0, -30)});
