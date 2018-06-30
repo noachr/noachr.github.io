@@ -44,9 +44,20 @@
 
       this.map = new google.maps.Map(document.getElementById('storeMap'),
       {
-        zoom: 11,
-        center: {lat: 33.7586, lng: -84.4223}
+        zoom: 5,
+        center: {lat: 35.6377018116222, lng: -84.4905453999}
       })
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+          let pos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          self.map.setCenter(pos);
+          self.map.setZoom(11)
+        })
+      }
 
       let icon = {
           url: "X.png",
