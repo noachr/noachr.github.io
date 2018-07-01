@@ -31,17 +31,23 @@
       width: 100%;
       height: 600px;
     }
+    #scrollContainer{
+      max-height: 530px;
+      overflow-y: auto;
+    }
     #cardContainer{
       padding-top: 12px;
       width: 100%;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
+      grid-auto-rows: max-content;
       grid-column-gap: 10px;
       grid-row-gap: 10px;
       padding: 10px;
     }
-    .card{
-      height: 10rem;
+
+    .card p{
+      font-size: 0.9rem;
     }
 
     @media (max-width:768px) {
@@ -59,6 +65,8 @@
       const self = this
 
       this.autocomplete = new google.maps.places.Autocomplete(document.getElementById('address'))
+
+      this.marker = null
 
       this.map = new google.maps.Map(document.getElementById('storeMap'),
       {
@@ -104,8 +112,12 @@
         if (place.geometry.viewport) {
           self.map.fitBounds(place.geometry.viewport)
         } else {
+
           self.map.setCenter(place.geometry.location)
-          self.map.setZoom(17)
+          self.map.setZoom(13)
+
+          if(this.marker) this.marker.setMap(null)
+          new google.maps.Marker({position: place.geometry.location, map: self.map})
       }})
 
       this.map.data.addListener("click",event=>{
@@ -167,11 +179,8 @@
             <div class="card">
               <div class="card-body">
                 <h6 class="card-title">${feature.getProperty("name")}</h6>
-                <p class="card-text">${this.productString(feature)}</p>
-                ${this.getProperty("address") && address}
-                <div class="card-footer">
-                  <a href=${this.mapURL(feature)} class="card-link" target="_">Open in Google Maps</a>
-                </div>
+                <h7 class="card-subtitle text-muted">${this.productString(feature)}</h7>
+                <p class="card-text mt-2">${feature.getProperty("address")}</p>
               </div>
             </div>
             `
@@ -213,6 +222,7 @@
       tableItems.forEach(feature=>{
         $(self.storeCard(feature)).appendTo("#cardContainer").on("click",()=>{
           self.drawPopup(feature)
+          window.scrollTo(0,0)
         })
       })
     }
@@ -319,8 +329,8 @@
           </form>
         </div>
       <div id="storeMap"></div>
-        <div id="cardContainer">
-
+        <div id="scrollContainer">
+          <div id="cardContainer"></div>
         </div>
     </div>
   </div>
